@@ -7,13 +7,13 @@
 # -Dlest_FEATURE_REGEX_SEARCH=0
 # -Dlest_FEATURE_TIME=1
 
-CXXFLAGS   := $(CXXFLAGS) -Wall -Wundef -Wno-missing-braces -I../include/lest
+CXXFLAGS   := $(CXXFLAGS) -Wall -Wno-missing-braces -I../include/lest
 CXXFLAGS03 := $(CXXFLAGS) -std=c++03
 CXXFLAGS11 := $(CXXFLAGS) -std=c++11
 
 vpath %.hpp ../include/lest
 
-all: test_lest test_lest_basic test_lest_decompose test_lest_cpp03
+all: test_lest test_lest_basic test_lest_decompose test_lest_cpp03_cpp11 test_lest_cpp03
 
 test: all
 
@@ -29,10 +29,14 @@ test_lest_decompose: test_lest_decompose.cpp lest_decompose.hpp
 	$(CXX) $(CXXFLAGS11) -o test_lest_decompose test_lest_decompose.cpp
 	./test_lest_decompose
 
+test_lest_cpp03_cpp11: test_lest_cpp03.cpp lest_cpp03.hpp
+	$(CXX) $(CXXFLAGS11) -o test_lest_cpp03_cpp11 test_lest_cpp03.cpp
+	./test_lest_cpp03_cpp11
+
 test_lest_cpp03: test_lest_cpp03.cpp lest_cpp03.hpp
 	$(CXX) $(CXXFLAGS03) -o test_lest_cpp03 test_lest_cpp03.cpp
 	./test_lest_cpp03
 
 clean:
-	-rm test_lest test_lest_basic test_lest_decompose test_lest_cpp03
+	-rm test_lest test_lest_basic test_lest_decompose test_lest_cpp03_cpp11 test_lest_cpp03
 

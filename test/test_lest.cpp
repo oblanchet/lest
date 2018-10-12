@@ -1,10 +1,32 @@
-// Copyright 2013, 2014, 2015 by Martin Moene
+// Copyright 2013-2018 by Martin Moene
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+// Suppress warning: comparing floating point with == or != is unsafe [-Werror=float-equal]
+// for CASE( "Expect succeeds for mixed integer, real comparison" ):
+
+#ifdef __clang__
+# pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined __GNUC__
+# pragma GCC   diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "lest.hpp"
 #include <set>
+
+// Suppress:
+// - shadow warning for CASE inside CASE
+// - unused parameter, for cases without assertions such as [.std...]
+#ifdef __clang__
+# pragma clang diagnostic ignored "-Wmissing-braces"
+# pragma clang diagnostic ignored "-Wshadow"
+# pragma clang diagnostic ignored "-Wunused-parameter"
+#elif defined __GNUC__
+# pragma GCC   diagnostic ignored "-Wmissing-braces"
+# pragma GCC   diagnostic ignored "-Wshadow"
+# pragma GCC   diagnostic ignored "-Wunused-parameter"
+#endif
 
 #define CASE_E( name ) \
     name, []( env & )
@@ -22,6 +44,8 @@ const lest::test no_using_namespace_lest[] =
 };
 
 using namespace lest;
+
+struct S { void f(){} };
 
 const lest::test specification[] =
 {
@@ -160,7 +184,7 @@ const lest::test specification[] =
         EXPECT( 1 == run( fail, os ) );
     },
 
-    CASE( "Expect succeeds for integer comparation" )
+    CASE( "Expect succeeds for integer comparison" )
     {
         EXPECT( 7 == 7 );
         EXPECT( 7 != 8 );
@@ -177,7 +201,7 @@ const lest::test specification[] =
         EXPECT_NOT( 7 >  8 );
     },
 
-    CASE( "Expect succeeds for mixed integer, real comparation" )
+    CASE( "Expect succeeds for mixed integer, real comparison" )
     {
         EXPECT( 7.0 == 7   );
         EXPECT( 7.0 != 8   );
@@ -188,7 +212,7 @@ const lest::test specification[] =
         EXPECT_NOT( 7  !=  7.0 );
     },
 
-    CASE( "Expect succeeds for string comparation" )
+    CASE( "Expect succeeds for string comparison" )
     {
         std::string a("a"); std::string b("b");
 
@@ -202,6 +226,23 @@ const lest::test specification[] =
         EXPECT_NOT( a >= b );
         EXPECT_NOT( b <  a );
         EXPECT_NOT( a >  b );
+    },
+
+    CASE( "Expect succeeds for comparison that yields user-defined type that (explicitly) converts to bool" )
+    {
+        struct logic_t
+        {
+            int value;
+
+            logic_t( int v = 0 ) : value( v ) {}
+
+            logic_t operator==( logic_t rhs ) const { return value == rhs.value; }
+
+            explicit operator bool() const { return value != 0; }
+        };
+
+        EXPECT(     logic_t( 7 ) == logic_t(  7 ) );
+        EXPECT_NOT( logic_t( 7 ) == logic_t( 42 ) );
     },
 
     CASE( "Expect expression RHS can use * / % + -" )
@@ -240,7 +281,7 @@ const lest::test specification[] =
     CASE( "Expect reports an unexpected standard exception" )
     {
         std::string text = "hello-world";
-        test fail[] = {{ CASE( "F", = ) { EXPECT( (throw std::runtime_error(text), true) ); } }};
+        test fail[] = {{ CASE_ON( "F", = ) { EXPECT( (throw std::runtime_error(text), true) ); } }};
 
         std::ostringstream os;
 
@@ -269,7 +310,7 @@ const lest::test specification[] =
     CASE( "Expect_no_throw reports a standard exception" )
     {
         std::string text = "hello-world";
-        test fail[] = {{ CASE( "F", = ) { EXPECT_NO_THROW( throw std::runtime_error(text) ); } }};
+        test fail[] = {{ CASE_ON( "F", = ) { EXPECT_NO_THROW( throw std::runtime_error(text) ); } }};
 
         std::ostringstream os;
 
@@ -298,7 +339,7 @@ const lest::test specification[] =
     CASE( "Expect_throws succeeds with a standard exception" )
     {
         std::string text = "hello-world";
-        test pass[] = {{ CASE( "P", = ) { EXPECT_THROWS( throw std::runtime_error(text) ); } }};
+        test pass[] = {{ CASE_ON( "P", = ) { EXPECT_THROWS( throw std::runtime_error(text) ); } }};
 
         std::ostringstream os;
 
@@ -382,20 +423,52 @@ const lest::test specification[] =
         EXPECT( Explicit{} );
     },
 
-    CASE( "Decomposition formats nullptr as string" )
+    CASE( "Decomposition formats nullptr as 'nullptr'" )
     {
-        test pass[] = {{ CASE( "P" ) { EXPECT(  nullptr == nullptr  ); } }};
-        test fail[] = {{ CASE( "F" ) { EXPECT( (void*)1 == nullptr  ); } }};
+        test pass[] = {{ CASE( "P" ) { EXPECT( nullptr == nullptr ); } }};
+        test fail[] = {{ CASE( "F" ) { EXPECT( nullptr == reinterpret_cast<void*>(1) ); } }};
 
         std::ostringstream os;
 
         EXPECT( 0 == run( pass, os ) );
         EXPECT( 1 == run( fail, os ) );
 
-        EXPECT( std::string::npos != os.str().find( "1 == nullptr" ) );
+        EXPECT( std::string::npos != os.str().find( "nullptr == 0x000" /*...1*/ ) );
     },
 
-    CASE( "Decomposition formats boolean as strings true and false" )
+    CASE( "Decomposition formats a pointer as hexadecimal number" )
+    {
+        void *p = reinterpret_cast<void*>( 0x123 );
+
+        test pass[] = {{ CASE_ON( "P", p ) { EXPECT( p == p ); } }};
+        test fail[] = {{ CASE_ON( "F", p ) { EXPECT( p != p ); } }};
+
+        std::ostringstream os;
+
+        EXPECT( 0 == run( pass, os ) );
+        EXPECT( 1 == run( fail, os ) );
+
+        EXPECT( std::string::npos != os.str().find( "0x000"     ) );
+        EXPECT( std::string::npos != os.str().find( "123 != 0x" ) );
+    },
+
+    CASE( "Decomposition formats a member function pointer as hexadecimal number" )
+    {
+        void (S::*p)() = &S::f;
+
+        test pass[] = {{ CASE_ON( "P", p ) { EXPECT( p == p ); } }};
+        test fail[] = {{ CASE_ON( "F", p ) { EXPECT( p != p ); } }};
+
+        std::ostringstream os;
+
+        EXPECT( 0 == run( pass, os ) );
+        EXPECT( 1 == run( fail, os ) );
+
+        EXPECT( std::string::npos != os.str().find( "0x" ) );
+        EXPECT( std::string::npos != os.str().find( "!=" ) );
+    },
+
+    CASE( "Decomposition formats boolean as strings 'true' and 'false'" )
     {
         test pass[] = {{ CASE( "P" ) { EXPECT( true == true  ); } }};
         test fail[] = {{ CASE( "F" ) { EXPECT( true == false ); } }};
@@ -421,13 +494,24 @@ const lest::test specification[] =
         EXPECT( std::string::npos != os.str().find( "'b' < 'a' for 'b' < 'a'" ) );
     },
 
+    CASE( "Decomposition formats unprintable characters as number" )
+    {
+        test fail[] = {{ CASE( "F" ) { EXPECT( '\x8' > '\t' ); } }};
+
+        std::ostringstream os;
+
+        EXPECT( 1 == run( fail, os ) );
+
+        EXPECT( std::string::npos != os.str().find( "'\\x8' > '\\t' for 8 > '\\t'" ) );
+    },
+
     CASE( "Decomposition formats std::string with double quotes" )
     {
         std::string hello( "hello" );
         std::string world( "world" );
 
-        test pass[] = {{ CASE( "P",= ) { EXPECT( hello < "world" ); } }};
-        test fail[] = {{ CASE( "F",= ) { EXPECT( world < "hello" ); } }};
+        test pass[] = {{ CASE_ON( "P", = ) { EXPECT( hello < "world" ); } }};
+        test fail[] = {{ CASE_ON( "F", = ) { EXPECT( world < "hello" ); } }};
 
         std::ostringstream os;
 
@@ -442,8 +526,8 @@ const lest::test specification[] =
         char const * hello( "hello" ); std::string std_hello( "hello" );
         char const * world( "world" ); std::string std_world( "world" );
 
-        test pass[] = {{ CASE( "P", = ) { EXPECT( hello < std_world ); } }};
-        test fail[] = {{ CASE( "F", = ) { EXPECT( world < std_hello ); } }};
+        test pass[] = {{ CASE_ON( "P", = ) { EXPECT( hello < std_world ); } }};
+        test fail[] = {{ CASE_ON( "F", = ) { EXPECT( world < std_hello ); } }};
 
         std::ostringstream os;
 
@@ -451,6 +535,26 @@ const lest::test specification[] =
         EXPECT( 1 == run( fail, os ) );
 
         EXPECT( std::string::npos != os.str().find( "world < std_hello for \"world\" < \"hello\"" ) );
+    },
+
+    CASE( "Decomposition formats an enum as its underlying value" )
+    {
+        enum { a, b, c, };
+
+        EXPECT( "2" == lest::to_string( c ) );
+    },
+
+    CASE( "Decomposition formats an unknown type with its memory content" )
+    {
+        struct { short x; } s = { 0x77 };
+
+        test fail[] = {{ CASE_ON( "F", s ) { EXPECT( "XXX" == lest::to_string( s ) ); } }};
+
+        std::ostringstream os;
+
+        EXPECT( 1 == run( fail, os ) );
+
+        EXPECT( std::string::npos != os.str().find( "0x00 77" ) );
     },
 
     CASE( "Decomposition formats a pair with elements between curly braces" )
@@ -473,8 +577,8 @@ const lest::test specification[] =
         std::set<int> s{ 1, 2, 3, };
         std::set<int> t{ 2, 1, 0, };
 
-        test pass[] = {{ CASE( "P", = ) { EXPECT( s == s ); } }};
-        test fail[] = {{ CASE( "F", = ) { EXPECT( s == t ); } }};
+        test pass[] = {{ CASE_ON( "P", = ) { EXPECT( s == s ); } }};
+        test fail[] = {{ CASE_ON( "F", = ) { EXPECT( s == t ); } }};
 
         std::ostringstream os;
 
@@ -791,6 +895,43 @@ const lest::test specification[] =
         }
     },
 
+    CASE( "Option -v,--verbose also report passing or failing sections [commandline]" )
+    {
+        test pass[] = {{ CASE( "P" ) { SETUP("Setup"){ SECTION("Section") { EXPECT( 1==1 ); }}} }};
+        test fail[] = {{ CASE( "F" ) { SETUP("Setup"){ SECTION("Section") { EXPECT( 1==2 ); }}} }};
+
+        {
+            std::ostringstream os;
+
+            EXPECT( 0 == run( pass, { "-v" }, os ) );
+
+            EXPECT( "" == os.str() );
+        }
+        {
+            std::ostringstream os;
+
+            EXPECT( 0 == run( pass, { "--verbose" }, os ) );
+
+            EXPECT( "" == os.str() );
+        }
+        {
+            std::ostringstream os;
+
+            EXPECT( 1 == run( fail, { "--verbose" }, os ) );
+
+            EXPECT( std::string::npos != os.str().find( "Setup" ) );
+            EXPECT( std::string::npos != os.str().find( "Section" ) );
+        }
+        {
+            std::ostringstream os;
+
+            EXPECT( 0 == run( pass, { "--verbose", "--pass" }, os ) );
+
+            EXPECT( std::string::npos != os.str().find( "Setup" ) );
+            EXPECT( std::string::npos != os.str().find( "Section" ) );
+        }
+    },
+
     CASE( "Option --order=declared tests in source code order [commandline]" )
     {
         test pass[] = {{ CASE_E( "b" ) { ; } },
@@ -842,7 +983,7 @@ const lest::test specification[] =
         test pass[] = {{ CASE_E( "b" ) { ; } },
                        { CASE_E( "a" ) { ; } }};
 
-        const int N = 1000;
+        const int N = 10000;
 
         int i = 0;
         while( i++ < N )
@@ -955,6 +1096,80 @@ const lest::test specification[] =
 
         EXPECT( std::string::npos != os.str().find( "a-b" ) );
         EXPECT( std::string::npos != os.str().find( "1 " ) );
+    },
+
+    // Report versions and capabilities:
+
+#define lest_PRESENT( x ) \
+    std::cout << #x << ": " << x << "\n"
+
+#define lest_ABSENT( x ) \
+    std::cout << #x << ": (undefined)\n"
+
+    CASE( "lest version" "[.version]" )
+    {
+        lest_PRESENT( lest_VERSION );
+    },
+
+    CASE( "lest features" "[.feature]" )
+    {
+        lest_PRESENT( lest_FEATURE_COLOURISE );
+        lest_PRESENT( lest_FEATURE_LITERAL_SUFFIX );
+        lest_PRESENT( lest_FEATURE_REGEX_SEARCH );
+#ifdef lest_FEATURE_RTTI
+        lest_PRESENT( lest_FEATURE_RTTI );
+#else
+        lest_ABSENT(  lest_FEATURE_RTTI );
+#endif
+        lest_PRESENT( lest_FEATURE_TIME_PRECISION );
+        lest_PRESENT( lest_FEATURE_WSTRING );
+    },
+
+    CASE( "C++ compiler version" "[.compiler]" )
+    {
+#ifdef lest_COMPILER_GNUC_VERSION
+        lest_PRESENT( lest_COMPILER_CLANG_VERSION );
+#else
+        lest_ABSENT(  lest_COMPILER_CLANG_VERSION );
+#endif
+
+#ifdef lest_COMPILER_GNUC_VERSION
+        lest_PRESENT( lest_COMPILER_GNUC_VERSION );
+#else
+        lest_ABSENT(  lest_COMPILER_GNUC_VERSION );
+#endif
+
+#ifdef lest_COMPILER_MSVC_VERSION
+        lest_PRESENT( lest_COMPILER_MSVC_VERSION );
+#else
+        lest_ABSENT(  lest_COMPILER_MSVC_VERSION );
+#endif
+    },
+
+    CASE( "C++ standard version" "[.stdc++]" )
+    {
+        lest_PRESENT( __cplusplus );
+#ifdef _MSVC_LANG
+        lest_PRESENT( _MSVC_LANG );
+#else
+        lest_ABSENT(  _MSVC_LANG );
+#endif
+        lest_PRESENT( lest_CPP17_OR_GREATER );
+        lest_PRESENT( lest_CPP17_OR_GREATER_MS );
+    },
+
+    CASE( "Presence of C++ language features" "[.stdlanguage]" )
+    {
+        lest_PRESENT( lest__cpp_rtti );
+    },
+
+    CASE( "Presence of C++ library features" "[.stdlibrary]" )
+    {
+#ifdef _HAS_CPP0X
+        lest_PRESENT( _HAS_CPP0X );
+#else
+        lest_ABSENT(  _HAS_CPP0X );
+#endif
     },
 };
 

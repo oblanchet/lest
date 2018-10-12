@@ -16,14 +16,34 @@
 #include <cstddef>
 
 #ifdef __clang__
-# pragma clang diagnostic ignored "-Wunused-value"
+# pragma clang diagnostic ignored "-Waggregate-return"
+# pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
+# pragma clang diagnostic push
 #elif defined __GNUC__
-# pragma GCC   diagnostic ignored "-Wunused-value"
+# pragma GCC   diagnostic ignored "-Waggregate-return"
+# pragma GCC   diagnostic push
+#endif
+
+// Suppress unused-value warning:
+
+#if defined __clang__
+# define lest_SUPPRESS_WUNUSED    _Pragma( "clang diagnostic push" ) \
+                                  _Pragma( "clang diagnostic ignored \"-Wunused-value\"" )
+# define lest_RESTORE_WARNINGS    _Pragma( "clang diagnostic pop"  )
+
+#elif defined __GNUC__
+# define lest_SUPPRESS_WUNUSED    _Pragma( "GCC diagnostic push" ) \
+                                  _Pragma( "GCC diagnostic ignored \"-Wunused-value\"" )
+# define lest_RESTORE_WARNINGS    _Pragma( "GCC diagnostic pop"  )
+#else
+# define lest_SUPPRESS_WUNUSED    /*empty*/
+# define lest_RESTORE_WARNINGS    /*empty*/
 #endif
 
 #ifndef lest_NO_SHORT_ASSERTION_NAMES
-# define CASE             lest_CASE
 # define TEST             lest_TEST
+# define CASE             lest_CASE
+# define CASE_ON          lest_CASE_ON
 # define EXPECT           lest_EXPECT
 # define EXPECT_NOT       lest_EXPECT_NOT
 # define EXPECT_NO_THROW  lest_EXPECT_NO_THROW
@@ -34,7 +54,10 @@
 #define lest_TEST \
     lest_CASE
 
-#define lest_CASE( name, ... ) \
+#define lest_CASE( name ) \
+    name, []
+
+#define lest_CASE_ON( name, ... ) \
     name, [__VA_ARGS__]
 
 #define lest_EXPECT( expr ) \
@@ -56,22 +79,28 @@
 #define lest_EXPECT_NO_THROW( expr ) \
     do \
     { \
+    lest_SUPPRESS_WUNUSED \
         try { expr; } \
         catch (...) { lest::inform( lest_LOCATION, #expr ); } \
+    lest_RESTORE_WARNINGS \
     } while ( lest::is_false() )
 
 #define lest_EXPECT_THROWS( expr ) \
     do \
     { \
+    lest_SUPPRESS_WUNUSED \
         try { expr; } catch (...) { break; } \
         throw lest::expected{ lest_LOCATION, #expr }; \
+    lest_RESTORE_WARNINGS \
     } while ( lest::is_false() )
 
 #define lest_EXPECT_THROWS_AS( expr, excpt ) \
     do \
     { \
+    lest_SUPPRESS_WUNUSED \
         try { expr; } catch ( excpt & ) { break; } catch (...) {} \
         throw lest::expected{ lest_LOCATION, #expr, lest::of_type( #excpt ) }; \
+    lest_RESTORE_WARNINGS \
     } while ( lest::is_false() )
 
 #define lest_LOCATION lest::location{__FILE__, __LINE__}
@@ -91,15 +120,15 @@ struct location
     const text file;
     const int line;
 
-    location( text file, int line )
-    : file( file ), line( line ) {}
+    location( text file_, int line_)
+    : file( file_), line( line_) {}
 };
 
 struct comment
 {
     const text info;
 
-    comment( text info ) : info( info ) {}
+    comment( text info_) : info( info_) {}
     explicit operator bool() { return ! info.empty(); }
 };
 
@@ -111,26 +140,26 @@ struct message : std::runtime_error
 
     ~message() throw() {}   // GCC 4.6
 
-    message( text kind, location where, text expr, text note = "" )
-    : std::runtime_error( expr ), kind( kind ), where( where ), note( note ) {}
+    message( text kind_, location where_, text expr_, text note_ = "" )
+    : std::runtime_error( expr_), kind( kind_), where( where_), note( note_) {}
 };
 
 struct failure : message
 {
-    failure( location where, text expr )
-    : message{ "failed", where, expr } {}
+    failure( location where_, text expr_)
+    : message{ "failed", where_, expr_} {}
 };
 
 struct expected : message
 {
-    expected( location where, text expr, text excpt = "" )
-    : message{ "failed: didn't get exception", where, expr, excpt } {}
+    expected( location where_, text expr_, text excpt_ = "" )
+    : message{ "failed: didn't get exception", where_, expr_, excpt_} {}
 };
 
 struct unexpected : message
 {
-    unexpected( location where, text expr, text note = "" )
-    : message{ "failed: got unexpected exception", where, expr, note } {}
+    unexpected( location where_, text expr_, text note_ = "" )
+    : message{ "failed: got unexpected exception", where_, expr_, note_} {}
 };
 
 inline bool is_false(           ) { return false; }
@@ -217,5 +246,11 @@ int run( test const (&specification)[N], std::ostream & os = std::cout )
 }
 
 } // namespace lest
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#elif defined __GNUC__
+# pragma GCC   diagnostic pop
+#endif
 
 #endif // LEST_LEST_HPP_INCLUDED

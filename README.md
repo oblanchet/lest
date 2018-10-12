@@ -1,7 +1,7 @@
 lest &ndash; lest errors escape testing
 =======================================
 
-[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)  [![Standard](https://img.shields.io/badge/c%2B%2B-11-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization) [![Standard](https://img.shields.io/badge/c%2B%2B-98-orange.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)  [![License](https://img.shields.io/badge/license-BSL-blue.svg)](https://opensource.org/licenses/BSL-1.0) [![Build Status](https://travis-ci.org/martinmoene/lest.svg?branch=master)](https://travis-ci.org/martinmoene/lest) [![Build status](https://ci.appveyor.com/api/projects/status/3777o06o2ni5lww2/branch/master?svg=true)](https://ci.appveyor.com/project/martinmoene/lest/branch/master) [![Version](https://badge.fury.io/gh/martinmoene%2Flest.svg)](https://github.com/martinmoene/lest/releases) [![download](https://img.shields.io/badge/latest%20version%20%20-download-blue.svg)](https://raw.githubusercontent.com/martinmoene/lest/master/include/lest/lest.hpp) [![Try it online](https://img.shields.io/badge/try%20it-online-blue.svg)](https://wandbox.org/permlink/37tlnHfRRk1FhCtm)
+[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)  [![Standard](https://img.shields.io/badge/c%2B%2B-11-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization) [![Standard](https://img.shields.io/badge/c%2B%2B-98-orange.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)  [![License](https://img.shields.io/badge/license-BSL-blue.svg)](https://opensource.org/licenses/BSL-1.0) [![Build Status](https://travis-ci.org/martinmoene/lest.svg?branch=master)](https://travis-ci.org/martinmoene/lest) [![Build status](https://ci.appveyor.com/api/projects/status/3777o06o2ni5lww2/branch/master?svg=true)](https://ci.appveyor.com/project/martinmoene/lest/branch/master) [![Version](https://badge.fury.io/gh/martinmoene%2Flest.svg)](https://github.com/martinmoene/lest/releases) [![download](https://img.shields.io/badge/latest%20version%20%20-download-blue.svg)](https://raw.githubusercontent.com/martinmoene/lest/master/include/lest/lest.hpp) [![Try it online](https://img.shields.io/badge/try%20it-online-blue.svg)](https://wandbox.org/permlink/sAVsUrrJsyv1z43c)
 
 This tiny C++11 test framework is based on ideas and examples by Kevlin Henney [1,2] and on ideas found in the CATCH test framework by Phil Nash [3].
 
@@ -101,7 +101,7 @@ In a nutshell
 
 **lest** is a small C++11 test framework for unit testing, regression testing, [Test-driven development (TDD)](http://en.wikipedia.org/wiki/Test-driven_development) and [Behaviour-driven design (BDD)](http://dannorth.net/introducing-bdd/). It replicates innovative ideas in C++ testing from the [Catch test framework](https://github.com/philsquared/Catch) such as [function-level fixtures](#fixture-macros) and [expression-decomposing assertion macros](#assertion-macros) in a form that is compact enough to read in five minutes. The lest_cpp03 variant provides similar capabilities to use with C++98/03 compilers.
 
-**Features and properties of lest** are ease of installation (single header), no boilerplate code,  traditional unit test cases and BDD style scenarios, strings as test names, function-level fixtures, expression-decomposing assertion macros, support for floating point comparison, test selection from commandline, test duration timing, test randomisation and sorting, display of passing tests, colourised output (compile-time option), C++11 code and a C++98/03 variant with comparable features (compilable with [VC6](http://en.wikipedia.org/wiki/Visual_C%2B%2B) and as C++11). 
+**Features and properties of lest** are ease of installation (single header), no boilerplate code,  traditional unit test cases and BDD style scenarios, strings as test names, function-level fixtures, expression-decomposing assertion macros, support for floating point comparison, test selection from commandline, test duration timing, test randomisation and sorting, display of passing tests, colourised output (compile-time option), C++11 code and a C++98/03 variant with comparable features (also compilable as C++11). 
 
 **Features available via other projects** are mocking (see [integrate Trompeloeil mocking framework](#main-trompeloeil)) and hamcrest matchers (see [variants of lest](#variants-of-lest)), 
 
@@ -173,6 +173,7 @@ Options:
 - `-l, --list-tests`, list selected tests
 - `-p, --pass`, also report passing tests
 - `-t, --time`, list duration of selected tests
+- `-v, --verbose`, also report passing or failing sections
 - `--order=declared`, use source code test order (default)
 - `--order=lexical`, use lexical sort test order
 - `--order=random`, use random test order
@@ -197,7 +198,10 @@ When regular expression selection has been enabled (and works), test specificati
 ### Test case macro
 A *lest* test specification can consist of a) one or more arrays of test cases that use lambdas, or b) auto-registered test cases that use free functions. See also macro [lest_FEATURE_AUTO_REGISTER](#other-macros). 
 
-**CASE(** "_proposition_", ...**) {** _code_ **}** &emsp; *(array of cases)*  
+**CASE(** "_proposition_" **) {** _code_ **}** &emsp; *(array of cases)*  
+Describe the expected behaviour to test for and specify the actions and expectations. See also section [Module registration macro](#module-registration-macro) &ndash; [Single-file code example](example/02-basic.cpp) &ndash; [Multi-file code example part 1](example/12-module-1.cpp), [2](example/12-module-2.cpp), [3](example/12-module-3.cpp).
+
+**CASE_ON(** "_proposition_", ...**) {** _code_ **}** &emsp; *(array of cases, since v1.33)*  
 Describe the expected behaviour to test for and specify the actions and expectations. After the description you can add a lambda capture list to refer to symbols in the enclosing scope. See also section [Module registration macro](#module-registration-macro) &ndash; [Single-file code example](example/02-basic.cpp) &ndash; [Multi-file code example part 1](example/12-module-1.cpp), [2](example/12-module-2.cpp), [3](example/12-module-3.cpp).
 
 **lest_CASE(** _specification_, "_proposition_" **) {** _code_ **}** &emsp; *(auto-registered cases)*  
@@ -233,9 +237,11 @@ Expect that an exception of the specified type is thrown during evaluation of th
 If an assertion fails, the remainder of the test that assertion is part of is skipped.
 
 ### BDD style macros
-*lest* provides several macros to write [Behaviour-Driven Design (BDD)](http://dannorth.net/introducing-bdd/) style scenarios &ndash; [Code example](example/10-bdd.cpp).
+*lest* provides several macros to write [Behaviour-Driven Design (BDD)](http://dannorth.net/introducing-bdd/) style scenarios &ndash; [Code example](example/10-bdd.cpp), [auto-registration](example/10-bdd-auto.cpp).
 
-**SCENARIO(** "_sketch_", ...**) {** _code_ **}**  
+**lest_SCENARIO(** _specification_, "_sketch_" **) {** _code_ **}** &emsp; *(auto-registered cases)*     
+
+**SCENARIO(** "_sketch_" **) {** _code_ **}** &emsp; *(array of cases)*  
 
 **GIVEN(** "_context_" **) {** _code_ **}**  
 
@@ -248,6 +254,8 @@ If an assertion fails, the remainder of the test that assertion is part of is sk
 **AND_THEN(** "_result_" **) {** _code_ **}**  
 
 These macros simply map to macros CASE(), SETUP() and SECTION().
+
+For auto-registered scenarios, consider defining macro SCENARIO(proposition) to hide the collection of scenarios and define it in terms of lest_SCENARIO(...).
 
 ### Module registration macro
 When using *arrays of  test cases* written across multiple files, you can use macro MODULE() to add a module's test cases to the overall specification &ndash; [Code example part 1](example/12-module-1.cpp), [2](example/12-module-2.cpp), [3](example/12-module-3.cpp).
@@ -452,43 +460,43 @@ You are encouraged to take it from here and change and expand it as you see fit 
 Features of *lest*
 ------------------
 
-Feature / variant             | latest | cpp03 | decompose | basic |
-------------------------------|:------:|:-----:|:---------:|:-----:|
-Assert expressions            | +      | +     | +         | +     |
-Assert exceptions             | +      | +     | +         | +     |
-Assert abortion (death)       | [contrib](contrib/lest_expect_abort/) | [contrib](contrib/lest_expect_abort/) | -         | -     |
-Assert assertions (death)     | [contrib](contrib/lest_expect_assert/) | [contrib](contrib/lest_expect_assert/) | -         | -     |
-Expression decomposition      | +      | modest| modest    | -     |
-Literal suffix u, l, f        | +      | -     | -         | -     |
-Colourised output             | +      | +     | -         | -     |
-BDD style scenarios           | +      | +     | -         | -     |
-Fixtures (sections)           | +      | +     | -         | -     |
-Floating point comparison, approx| +   | +     | -         | -     |
-Floating point comparison, ulp   | -   | -     | -         | -     |
-Test selection (include/omit) | +      | +     | -         | -     |
-Test selection (regexp)       | +      | +     | -         | -     |
-Help screen                   | +      | +     | -         | -     |
-Abort at first failure        | +      | +     | -         | -     |
-Count selected tests          | +      | +     | -         | -     |
-List tags of selected tests   | +      | +     | -         | -     |
-List selected tests           | +      | +     | -         | -     |
-Report passing tests          | +      | +     | -         | -     |
-Time duration of tests        | +      | +     | -         | -     |
-Control order of tests        | +      | +     | -         | -     |
-Repeat tests                  | +      | +     | -         | -     |
-Auto registration of tests    | +      | +     | -         | -     |
-Modules of tests              | +      | +     | -         | -     |
-&nbsp;                        | &nbsp; |&nbsp; |&nbsp;     |&nbsp; |
-Suites of tests               | -      | -     | -         | -     |
-Value-parameterised tests     | -      | -     | -         | -     |
-Type-parameterised tests      | -      | -     | -         | -     |
-Test data generators          | -      | -     | -         | -     |
-[Hamcrest matchers](#variants-of-lest)| +/-| - | -         | -     |
-Mocking support               | -      | -     | -         | -     |
-Logging facility              | -      | -     | -         | -     |
-Break into debugger           | -      | -     | -         | -     |
-Concurrent execution of tests | -      | -     | -         | -     |
-Isolated execution of tests   | -      | -     | -         | -     |
+Feature / variant             | latest  | cpp03  | decompose  | basic    |
+------------------------------|:-------:|:-------:|:--------:|:--------:|
+Assert expressions            | &#10003;| &#10003;| &#10003; | &#10003; |
+Assert exceptions             | &#10003;| &#10003;| &#10003; | &#10003; |
+Assert abortion (death)       | [contrib](contrib/lest_expect_abort/)  | [contrib](contrib/lest_expect_abort/)  | - | - |
+Assert assertions (death)     | [contrib](contrib/lest_expect_assert/) | [contrib](contrib/lest_expect_assert/) | - | - |
+Expression decomposition      | &#10003;| modest  | modest    | -     |
+Literal suffix u, l, f        | &#10003;| -       | -         | -     |
+Colourised output             | &#10003;| &#10003;| -         | -     |
+BDD style scenarios           | &#10003;| &#10003;| -         | -     |
+Fixtures (sections)           | &#10003;| &#10003;| -         | -     |
+Floating point comparison, approx|&#10003;| &#10003;| -       | -     |
+Floating point comparison, ulp| -       | -       | -         | -     |
+Test selection (include/omit) | &#10003;| &#10003;| -         | -     |
+Test selection (regexp)       | &#10003;| &#10003;| -         | -     |
+Help screen                   | &#10003;| &#10003;| -         | -     |
+Abort at first failure        | &#10003;| &#10003;| -         | -     |
+Count selected tests          | &#10003;| &#10003;| -         | -     |
+List tags of selected tests   | &#10003;| &#10003;| -         | -     |
+List selected tests           | &#10003;| &#10003;| -         | -     |
+Report passing tests          | &#10003;| &#10003;| -         | -     |
+Time duration of tests        | &#10003;| &#10003;| -         | -     |
+Control order of tests        | &#10003;| &#10003;| -         | -     |
+Repeat tests                  | &#10003;| &#10003;| -         | -     |
+Auto registration of tests    | &#10003;| &#10003;| -         | -     |
+Modules of tests              | &#10003;| &#10003;| -         | -     |
+&nbsp;                        | &nbsp;  | &nbsp;  |&nbsp;     |&nbsp; |
+Suites of tests               | -       | -       | -         | -     |
+Value-parameterised tests     | -       | -       | -         | -     |
+Type-parameterised tests      | -       | -       | -         | -     |
+Test data generators          | -       | -       | -         | -     |
+[Hamcrest matchers](#variants-of-lest)| +/-| -    | -         | -     |
+Mocking support               | -       | -       | -         | -     |
+Logging facility              | -       | -       | -         | -     |
+Break into debugger           | -       | -       | -         | -     |
+Concurrent execution of tests | -       | -       | -         | -     |
+Isolated execution of tests   | -       | -       | -         | -     |
 
 
 Reported to work with
@@ -501,7 +509,7 @@ Variant / compiler     | clang | GCC   | VC    |
 lest (latest)          |  3.2  | 4.8.1 | 12    |
 lest_basic             |  3.2  | 4.6   | 12    |
 lest_decompose         |  3.2  | 4.6   | 12    |
-lest_cpp03 (decompose) |  ?    | ?     | 6 SP6 |
+lest_cpp03 (decompose) |  ?    | ?     | 8     |
 
 **Note**: I've made a few concessions to enable compilation of `lest.hpp` with Visual C++:
 - Prevent [error C2797](https://connect.microsoft.com/VisualStudio/feedbackdetail/view/917150): replace braced member initialisation with C++98 style initialisation.
@@ -543,6 +551,7 @@ Here we use lest/build.
 	- `-DLEST_BUILD_TEST=ON`: build the tests for lest, default on
 	- `-DLEST_BUILD_EXAMPLE=ON`: build the examples, default on
 	- `-DLEST_BUILD_CONTRIB=OFF`: build the contrib folder, default off
+	- `-DLEST_EXTRA_WARNINGS=OFF`: build with extra warnings and warnings as errors, default off
 
 4. Build the test suite.    
 
@@ -568,12 +577,13 @@ This [comparison of Catch, doctest and lest](https://github.com/martinmoene/catc
 - [doctest](https://github.com/onqtam/doctest) - The lightest feature-rich C++ single-header testing framework for unit tests and TDD. Catch/lest-inspired tests that accompany code.
 - [stf](https://github.com/jfalcou/stf) - Simple TDD Framework. Catch/lest-inspired with an emphasis on floating point precision testing.  
 - [cute](https://github.com/Kosta-Github/cute) - C++ unit test executor.
-- [bandit](http://banditcpp.org/) - Human friendly unit testing for C++11.
+- [bandit](http://banditcpp.github.io/bandit/) - Human friendly unit testing for C++11.
 - [igloo](http://igloo-testing.org/) - BDD style unit testing for C++.
 - [mettle](https://github.com/jimporter/mettle) - A C++14 unit test framework.
 - [CppUTest](http://cpputest.github.io/) - Unit testing and mocking framework for C/C++.
 - [UnitTest++](https://github.com/unittest-cpp/unittest-cpp) - A lightweight unit testing framework for C++.
 - [xUnit++](https://bitbucket.org/moswald/xunit/wiki/Home) - A unit testing platform for C++ inspired by [xUnit.net](http://xunit.github.io/).
+- [ZenUnit](https://github.com/NeilJustice/ZenUnit) - Single-header C++ unit testing framework for value- and type-parameterized tests.
 - [Search for C++98 test frameworks on GitHub](https://github.com/search?q=language%3AC%2B%2B+98+test+framework&type=Repositories&ref=advsearch)
 - [Search for C++11 test frameworks on GitHub](https://github.com/search?q=language%3AC%2B%2B+11+test+framework&type=Repositories&ref=advsearch)
 - [Search for C++14 test frameworks on GitHub](https://github.com/search?q=language%3AC%2B%2B+14+test+framework&type=Repositories&ref=advsearch)
