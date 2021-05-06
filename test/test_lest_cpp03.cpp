@@ -12,7 +12,7 @@
 # pragma GCC   diagnostic ignored "-Wfloat-equal"
 #endif
 
-#include "lest_cpp03.hpp"
+#include "lest/lest_cpp03.hpp"
 #include <string>
 
 // Suppress:
@@ -541,7 +541,7 @@ CASE( "Decomposition formats unprintable characters as number" )
 
     EXPECT( 1 == run( fail, os ) );
 
-    EXPECT( std::string::npos != os.str().find( "'\\x8' > '\\t' for 8 > '\\t'" ) );
+    EXPECT( std::string::npos != os.str().find( "'\\x8' > '\\t' for '\\x08' > '\\t'" ) );
 }
 
 std::string std_hello( "hello" );
@@ -950,6 +950,7 @@ CASE( "Option -p,--pass also reports passing selected tests [commandline]" )
 
         EXPECT( std::string::npos != os.str().find( "a b c"  ) );
         EXPECT( std::string::npos != os.str().find( "passed" ) );
+        EXPECT( std::string::npos != os.str().find( " for "  ) );
     }{
         std::ostringstream os;
         char const * args[] = { "--pass" };
@@ -958,6 +959,33 @@ CASE( "Option -p,--pass also reports passing selected tests [commandline]" )
 
         EXPECT( std::string::npos != os.str().find( "a b c"  ) );
         EXPECT( std::string::npos != os.str().find( "passed" ) );
+        EXPECT( std::string::npos != os.str().find( " for "  ) );
+    }
+}
+
+CASE( "Option -z,--pass-zen also reports passing selected tests, but not expansion [commandline]" )
+{
+    struct f { static void pass(env & lest_env) { EXPECT( true ); }};
+
+    test pass[] = { test( "a b c", f::pass ) };
+
+    {   std::ostringstream os;
+        char const * args[] = { "-z" };
+
+        EXPECT( 0 == run( pass, make_texts( args ), os ) );
+
+        EXPECT( std::string::npos != os.str().find( "a b c"  ) );
+        EXPECT( std::string::npos != os.str().find( "passed" ) );
+        EXPECT( std::string::npos == os.str().find( " for "  ) );
+    }{
+        std::ostringstream os;
+        char const * args[] = { "--pass-zen" };
+
+        EXPECT( 0 == run( pass, make_texts( args ), os ) );
+
+        EXPECT( std::string::npos != os.str().find( "a b c"  ) );
+        EXPECT( std::string::npos != os.str().find( "passed" ) );
+        EXPECT( std::string::npos == os.str().find( " for "  ) );
     }
 }
 
@@ -1115,6 +1143,9 @@ CASE( "Option -- ends option section [commandline]" )
 
 CASE( "lest version" "[.version]" )
 {
+    lest_PRESENT( lest_MAJOR );
+    lest_PRESENT( lest_MINOR );
+    lest_PRESENT( lest_PATCH );
     lest_PRESENT( lest_VERSION );
 }
 
@@ -1181,7 +1212,7 @@ int main( int argc, char * argv[] )
     return lest::run( specification, argc, argv );
 }
 
-// cl -nologo -W3 -EHsc -I../include/lest test_lest_cpp03.cpp && test_lest_cpp03
-// cl -nologo -Wall -EHsc -I../include/lest test_lest_cpp03.cpp && test_lest_cpp03
-// g++ -Wall -Wextra -std=c++11 -I../include/lest -o test_lest_cpp03.exe test_lest_cpp03.cpp && test_lest_cpp03
-// g++ -Wall -Wextra -std=c++03 -I../include/lest -o test_lest_cpp03.exe test_lest_cpp03.cpp && test_lest_cpp03
+// cl -nologo -W3 -EHsc -I../include test_lest_cpp03.cpp && test_lest_cpp03
+// cl -nologo -Wall -EHsc -I../include test_lest_cpp03.cpp && test_lest_cpp03
+// g++ -Wall -Wextra -std=c++11 -I../include -o test_lest_cpp03.exe test_lest_cpp03.cpp && test_lest_cpp03
+// g++ -Wall -Wextra -std=c++03 -I../include -o test_lest_cpp03.exe test_lest_cpp03.cpp && test_lest_cpp03

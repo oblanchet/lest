@@ -12,7 +12,7 @@
 # pragma GCC   diagnostic ignored "-Wfloat-equal"
 #endif
 
-#include "lest.hpp"
+#include "lest/lest.hpp"
 #include <set>
 
 // Suppress:
@@ -494,7 +494,7 @@ const lest::test specification[] =
         EXPECT( std::string::npos != os.str().find( "'b' < 'a' for 'b' < 'a'" ) );
     },
 
-    CASE( "Decomposition formats unprintable characters as number" )
+    CASE( "Decomposition formats unprintable characters as hex character '\\xdd'" )
     {
         test fail[] = {{ CASE( "F" ) { EXPECT( '\x8' > '\t' ); } }};
 
@@ -502,7 +502,7 @@ const lest::test specification[] =
 
         EXPECT( 1 == run( fail, os ) );
 
-        EXPECT( std::string::npos != os.str().find( "'\\x8' > '\\t' for 8 > '\\t'" ) );
+        EXPECT( std::string::npos != os.str().find( "'\\x8' > '\\t' for '\\x08' > '\\t'" ) );
     },
 
     CASE( "Decomposition formats std::string with double quotes" )
@@ -861,6 +861,7 @@ const lest::test specification[] =
 
             EXPECT( std::string::npos != os.str().find( "a b c"  ) );
             EXPECT( std::string::npos != os.str().find( "passed" ) );
+            EXPECT( std::string::npos != os.str().find( " for "  ) );
         }
         {
             std::ostringstream os;
@@ -869,6 +870,30 @@ const lest::test specification[] =
 
             EXPECT( std::string::npos != os.str().find( "a b c"  ) );
             EXPECT( std::string::npos != os.str().find( "passed" ) );
+            EXPECT( std::string::npos != os.str().find( " for "  ) );
+        }
+    },
+
+    CASE( "Option -z,--pass-zen also reports passing selected tests, but not expansion [commandline]" )
+    {
+        test pass[] = {{ CASE( "a b c" ) { EXPECT( true ); } }};
+
+        {   std::ostringstream os;
+
+            EXPECT( 0 == run( pass, { "-z" }, os ) );
+
+            EXPECT( std::string::npos != os.str().find( "a b c"  ) );
+            EXPECT( std::string::npos != os.str().find( "passed" ) );
+            EXPECT( std::string::npos == os.str().find( " for "  ) );
+        }
+        {
+            std::ostringstream os;
+
+            EXPECT( 0 == run( pass, { "--pass-zen" }, os ) );
+
+            EXPECT( std::string::npos != os.str().find( "a b c"  ) );
+            EXPECT( std::string::npos != os.str().find( "passed" ) );
+            EXPECT( std::string::npos == os.str().find( " for "  ) );
         }
     },
 
@@ -1108,6 +1133,9 @@ const lest::test specification[] =
 
     CASE( "lest version" "[.version]" )
     {
+        lest_PRESENT( lest_MAJOR );
+        lest_PRESENT( lest_MINOR );
+        lest_PRESENT( lest_PATCH );
         lest_PRESENT( lest_VERSION );
     },
 
@@ -1154,8 +1182,11 @@ const lest::test specification[] =
 #else
         lest_ABSENT(  _MSVC_LANG );
 #endif
+        lest_PRESENT( lest_CPP98_OR_GREATER );
+        lest_PRESENT( lest_CPP11_OR_GREATER );
+        lest_PRESENT( lest_CPP14_OR_GREATER );
         lest_PRESENT( lest_CPP17_OR_GREATER );
-        lest_PRESENT( lest_CPP17_OR_GREATER_MS );
+        lest_PRESENT( lest_CPP20_OR_GREATER );
     },
 
     CASE( "Presence of C++ language features" "[.stdlanguage]" )
@@ -1178,7 +1209,7 @@ int main( int argc, char * argv[] )
     return lest::run( specification, argc, argv );
 }
 
-// cl -nologo -Wall -EHsc -I../include/lest test_lest.cpp && test_lest
-// g++ -Wall -Wextra -std=c++11 -I../include/lest -o test_lest.exe test_lest.cpp && test_lest
+// cl -nologo -Wall -EHsc -I../include test_lest.cpp && test_lest
+// g++ -Wall -Wextra -std=c++11 -I../include -o test_lest.exe test_lest.cpp && test_lest
 
 // test_lest "spec" "!spec""

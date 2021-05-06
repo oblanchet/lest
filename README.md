@@ -1,7 +1,7 @@
 lest &ndash; lest errors escape testing
 =======================================
 
-[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)  [![Standard](https://img.shields.io/badge/c%2B%2B-11-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization) [![Standard](https://img.shields.io/badge/c%2B%2B-98-orange.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)  [![License](https://img.shields.io/badge/license-BSL-blue.svg)](https://opensource.org/licenses/BSL-1.0) [![Build Status](https://travis-ci.org/martinmoene/lest.svg?branch=master)](https://travis-ci.org/martinmoene/lest) [![Build status](https://ci.appveyor.com/api/projects/status/3777o06o2ni5lww2/branch/master?svg=true)](https://ci.appveyor.com/project/martinmoene/lest/branch/master) [![Version](https://badge.fury.io/gh/martinmoene%2Flest.svg)](https://github.com/martinmoene/lest/releases) [![download](https://img.shields.io/badge/latest%20version%20%20-download-blue.svg)](https://raw.githubusercontent.com/martinmoene/lest/master/include/lest/lest.hpp) [![Try it online](https://img.shields.io/badge/try%20it-online-blue.svg)](https://wandbox.org/permlink/sAVsUrrJsyv1z43c)
+[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)  [![Standard](https://img.shields.io/badge/c%2B%2B-11-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization) [![Standard](https://img.shields.io/badge/c%2B%2B-98-orange.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)  [![License](https://img.shields.io/badge/license-BSL-blue.svg)](https://opensource.org/licenses/BSL-1.0) [![Build Status](https://travis-ci.org/martinmoene/lest.svg?branch=master)](https://travis-ci.org/martinmoene/lest) [![Build status](https://ci.appveyor.com/api/projects/status/3777o06o2ni5lww2/branch/master?svg=true)](https://ci.appveyor.com/project/martinmoene/lest/branch/master) [![Version](https://badge.fury.io/gh/martinmoene%2Flest.svg)](https://github.com/martinmoene/lest/releases) [![download](https://img.shields.io/badge/latest-download-blue.svg)](https://raw.githubusercontent.com/martinmoene/lest/master/include/lest/lest.hpp) [![Conan](https://img.shields.io/badge/on-conan-blue.svg)](https://bintray.com/martinmoene/testing/lest%3Atesting/_latestVersion) [![Try it online](https://img.shields.io/badge/on-wandbox-blue.svg)](https://wandbox.org/permlink/80a88nlPralvatNq)
 
 This tiny C++11 test framework is based on ideas and examples by Kevlin Henney [1,2] and on ideas found in the CATCH test framework by Phil Nash [3].
 
@@ -28,7 +28,7 @@ Example usage
 -------------
 
 ```Cpp
-#include "lest.hpp"
+#include "lest/lest.hpp"
 
 using namespace std;
 
@@ -81,7 +81,7 @@ Note: besides above table approach, *lest* also supports [auto-registration of t
 ### Compile and run
 
 ```
-prompt>g++ -Wall -Wextra -std=c++11 -I../include/lest -o 05_select.exe 05_select.cpp && 05_select.exe
+prompt>g++ -Wall -Wextra -std=c++11 -I../include -o 05_select.exe 05_select.cpp && 05_select.exe
 05_select.cpp:17: failed: Text compares lexically (fail): string("hello") > string("world") for "hello" > "world"
 05_select.cpp:22: failed: got unexpected exception with message "surprise!": Unexpected exception is reported: (throw std::runtime_error("surprise!"), true)
 05_select.cpp:37: failed: didn't get exception: Expected exception is reported missing: true
@@ -154,7 +154,8 @@ Synopsis
 - [Assertion macros](#assertion-macros)
 - [BDD style macros](#bdd-style-macros)
 - [Module registration macro](#module-registration-macro)
-- [Other macros](#other-macros)
+- [Feature selection macros](#feature-selection-macros)
+- [Standard selection macro](#standard-selection-macro)
 - [Namespace](#namespace)
 - [Tests](#tests)
 - [Main](#main)
@@ -172,6 +173,7 @@ Options:
 - `-g, --list-tags`, list tags of selected tests
 - `-l, --list-tests`, list selected tests
 - `-p, --pass`, also report passing tests
+- `-z, --pass-zen`, ... without expansion
 - `-t, --time`, list duration of selected tests
 - `-v, --verbose`, also report passing or failing sections
 - `--order=declared`, use source code test order (default)
@@ -265,7 +267,7 @@ Register this module's test specification with the overall specification.
 
 Note that with *lest* using [auto test case registration](#other-macros) there's no need for macro MODULE(), see the [auto-registration example part  1](example/13-module-auto-reg-1.cpp), [2](example/13-module-auto-reg-2.cpp), [3](example/13-module-auto-reg-3.cpp). The same holds for *lest_cpp03*, see [cpp03 example part 1](example/14-module-cpp03-1.cpp), [2](example/14-module-cpp03-2.cpp), [3](example/14-module-cpp03-3.cpp).
 
-### Other macros
+### Feature selection macros
 -D<b>lest_NO_SHORT_MACRO_NAMES</b>  
 -D<b>lest_NO_SHORT_ASSERTION_NAMES</b> (deprecated)  
 All public API macros of _lest_ exist as lest\_*MACRO* and shorthand _MACRO_ variant. Define this macro to omit the shorthand macros.
@@ -297,6 +299,10 @@ Define this to 0 to remove references to std::wstring. Default is 1.
 -D<b>lest_FEATURE_RTTI</b> (undefined)  
 *lest* tries to determine if RTTI is available itself. If that doesn't work out, define this to 1 or 0 to include or remove uses of RTTI (currently a single occurrence of `typeid` used for reporting a type name). Default is undefined.
 
+### Standard selection macro
+-D<b>lest_CPLUSPLUS</b>=199711L  
+Define this macro to override the auto-detection of the supported C++ standard, or if your compiler does not set the `__cplusplus` macro correctly.
+
 ### Namespace
 namespace **lest** { }  
 Types and functions are located in namespace lest.
@@ -315,7 +321,7 @@ You'll need type `env` and variable `lest_env` when you have a test case that ca
 ### Main
 A typical `main()` function for *lest* may look as follows:
 ```Cpp
-#include "lest.hpp"
+#include "lest/lest.hpp"
 
 const lest::test specification[] = { CASE("..."){} };
 
@@ -330,13 +336,13 @@ int main( int argc, char *argv[] )
 
 Compile and run:
 ```
-prompt>g++ -std=c++11 -o main.exe -I./include/lest main.cpp && main.exe
+prompt>g++ -std=c++11 -o main.exe -I../include main.cpp && main.exe
 All tests passed
 ```
 
 Or, if feedback on success is moved to the command line:
 ```Cpp
-#include "lest.hpp"
+#include "lest/lest.hpp"
 
 const lest::test specification[] = { CASE("..."){} };
 
@@ -348,7 +354,7 @@ int main( int argc, char *argv[] )
 
 Compile and run with feedback on success:
 ```
-prompt>g++ -std=c++11 -o main.exe -I./include/lest main.cpp && main.exe && echo All tests passed
+prompt>g++ -std=c++11 -o main.exe -I../include main.cpp && main.exe && echo All tests passed
 All tests passed
 ```
 
@@ -381,7 +387,7 @@ int **run(** test const (& _specification_ )[N], int _argc_, char \* _argv_[], s
 You can integrate the [Trompeloeil mocking framework](https://github.com/rollbear/trompeloeil) with *lest* by providing a reporter for Trompeloeil &ndash; [Code example](example/16-trompeloeil-runtime.cpp).
 
 ```Cpp
-#include "lest.hpp"
+#include "lest/lest.hpp"
 #include "trompeloeil.hpp"
 
 int main( int argc, char * argv[] )
@@ -522,7 +528,7 @@ Tests and examples can be build with Buck, via Makefiles or by using CMake.
 
 To build the tests and examples as described below you need:
 
-- [Buck](https://buckbuild.com/) or [CMake](http://cmake.org) version 2.8 or later to be installed and in your PATH.
+- [Buck](https://buckbuild.com/) or [CMake](http://cmake.org) version 3.5 or later to be installed and in your PATH.
 - A [suitable compiler](#reported-to-work-with). 
 
 The following steps assume that the [*lest* source code](https://github.com/martinmoene/lest) has been cloned into a directory named `lest`.
